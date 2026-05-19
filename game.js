@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Canvas Background Particles
     initParticles();
 
-    let currentStageIndex = StorageManager.loadProgress();
+    let currentStageIndex = StorageManager.getUnlockedStage();
     let currentStage = null;
     let pipesData = [];
     let moves = 0;
@@ -18,6 +18,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearModal = document.getElementById('clear-modal');
     const autoSolveBtn = document.getElementById('auto-solve-btn'); // 추가된 임시 정답 버튼
 
+    // New UI Elements
+    const viewTitle = document.getElementById('view-title');
+    const viewStageSelect = document.getElementById('view-stage-select');
+    const viewGame = document.getElementById('view-game');
+    const btnToSelect = document.getElementById('btn-to-select');
+    const btnBack = document.getElementById('btn-back');
+    const stageGrid = document.getElementById('stage-grid');
+    const stageInfoPanel = document.getElementById('stage-info-panel');
+    const selectedStageTitle = document.getElementById('selected-stage-title');
+    const selectedStageStars = document.getElementById('selected-stage-stars').querySelectorAll('.star');
+    const btnPlayStage = document.getElementById('btn-play-stage');
+
+    let selectedStageForPlay = 0;
+
     // UI Buttons
     document.querySelector('.rotate-left').addEventListener('click', () => rotatePipe(-1));
     document.querySelector('.rotate-right').addEventListener('click', () => rotatePipe(1));
@@ -25,8 +39,30 @@ document.addEventListener('DOMContentLoaded', () => {
     
     checkBtn.addEventListener('click', checkWaterFlow);
     resetBtn.addEventListener('click', () => loadStage(currentStageIndex));
-    nextBtn.addEventListener('click', goToNextStage);
-    autoSolveBtn.addEventListener('click', autoSolveStage); // 이벤트 연결
+    
+    nextBtn.addEventListener('click', () => {
+        clearModal.classList.add('hidden');
+        showView('stage-select');
+        renderStageGrid();
+    });
+    
+    autoSolveBtn.addEventListener('click', autoSolveStage);
+    
+    // View Routing Buttons
+    btnToSelect.addEventListener('click', () => {
+        showView('stage-select');
+        renderStageGrid();
+    });
+    
+    btnBack.addEventListener('click', () => {
+        showView('stage-select');
+        renderStageGrid();
+    });
+    
+    btnPlayStage.addEventListener('click', () => {
+        loadStage(selectedStageForPlay);
+        showView('game');
+    });
     
     // Background click to deselect
     document.querySelector('.game-container').addEventListener('click', (e) => {
@@ -39,17 +75,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    loadStage(currentStageIndex);
+    // Start with Title View
+    showView('title');
+
+    function showView(viewId) {
+        viewTitle.classList.add('hidden');
+        viewStageSelect.classList.add('hidden');
+        viewGame.classList.add('hidden');
+        
+        if (viewId === 'title') viewTitle.classList.remove('hidden');
+        if (viewId === 'stage-select') viewStageSelect.classList.remove('hidden');
+        if (viewId === 'game') viewGame.classList.remove('hidden');
+    }
+
+    function renderStageGrid() {
+        stageGrid.innerHTML = '';
+        const unlocked = StorageManager.getUnlockedStage();
+        
+        stages.forEach((stage, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'stage-btn';
+            btn.innerText = idx + 1;
+            
+            if (idx > unlocked) {
+                btn.classList.add('locked');
+                btn.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+            } else {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    showStageInfo(idx);
+                });
+            }
+            stageGrid.appendChild(btn);
+        });
+        
+        stageInfoPanel.classList.add('hidden');
+    }
+
+    function showStageInfo(idx) {
+        selectedStageForPlay = idx;
+        selectedStageTitle.innerText = `Stage ${idx + 1}`;
+        
+        const earnedStars = StorageManager.getStars(idx);
+        selectedStageStars.forEach((starEl, i) => {
+            if (i < earnedStars) {
+                starEl.classList.remove('empty');
+                starEl.classList.add('active');
+            } else {
+                starEl.classList.add('empty');
+                starEl.classList.remove('active');
+            }
+        });
+        
+        stageInfoPanel.classList.remove('hidden');
+    }
 
     function loadStage(index) {
         if (index >= stages.length) {
             alert("모든 스테이지를 클리어했습니다!");
-            StorageManager.clearProgress();
-            index = 0;
+            index = stages.length - 1;
         }
         
         currentStageIndex = index;
-        StorageManager.saveProgress(currentStageIndex);
+        StorageManager.unlockStage(currentStageIndex);
         currentStage = JSON.parse(JSON.stringify(stages[currentStageIndex])); // Deep copy
         pipesData = currentStage.pipes;
         moves = 0;
@@ -100,8 +189,67 @@ document.addEventListener('DOMContentLoaded', () => {
             pEl.id = pipe.id;
             pEl.innerHTML = pipeSVGs[pipe.type];
             
-            if (pipe.start) pEl.innerHTML += '<svg class="faucet-icon" viewBox="0 0 24 24"><path d="M12 2v20M8 22h8M4 6h16M10 6V4a2 2 0 0 1 4 0v2"/></svg>';
-            if (pipe.target) pEl.innerHTML += '<svg class="target-icon" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+            if (pipe.start) {
+                // High-fidelity Faucet/Tap SVG dripping a droplet
+                const faucetSVG = `
+                <svg class="faucet-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 32h24c2.5 0 4.5-2 4.5-4.5v-3.5c0-2.5-2-4.5-4.5-4.5h-5.5" />
+                    <path d="M40 24v14c0 2.5-2 4.5-4.5 4.5h-2" />
+                    <path d="M28 12h18" />
+                    <path d="M37 12v7" />
+                    <path d="M31.5 46.5c0 1.9 1.6 3.5 3.5 3.5s3.5-1.6 3.5-3.5-3.5-6.5-3.5-6.5-3.5 4.6-3.5 6.5z" fill="currentColor" stroke="none" />
+                </svg>
+                `;
+                pEl.innerHTML += faucetSVG;
+                pEl.innerHTML += `<div class="cell-badge start-badge">START 💧</div>`;
+                
+                // Outward pulsing glowing arrows for starting openings (filtered to stay within boundaries)
+                const openings = getOpenings(pipe);
+                openings.forEach(dir => {
+                    if (dir === 0 && pipe.y === 0) return; // Skip Top out-of-bounds
+                    if (dir === 1 && pipe.x === currentStage.cols - 1) return; // Skip Right out-of-bounds
+                    if (dir === 2 && pipe.y === currentStage.rows - 1) return; // Skip Bottom out-of-bounds
+                    if (dir === 3 && pipe.x === 0) return; // Skip Left out-of-bounds
+
+                    pEl.innerHTML += `
+                    <div class="flow-indicator outflow dir-${dir}">
+                        <svg class="arrow-svg" viewBox="0 0 24 24">
+                            <path d="M12 5v14M19 12l-7 7-7-7" />
+                        </svg>
+                    </div>`;
+                });
+            }
+            
+            if (pipe.target) {
+                // High-fidelity Water Tank/Bucket SVG
+                const targetSVG = `
+                <svg class="target-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 22l5 26c0.4 2 2.2 3.5 4.3 3.5h13.4c2.1 0 3.9-1.5 4.3-3.5l5-26" />
+                    <ellipse cx="32" cy="22" rx="16" ry="4" />
+                    <path d="M16 22c0-8 16-8 16-8s16 0 16 8" stroke-dasharray="3 3" stroke-width="3" />
+                    <path d="M22 36c3-1 3 1 6 0s3-1 6 0s3 1 6 0" stroke="#ffd700" stroke-width="3" />
+                    <path d="M24 43c2.5-0.7 2.5 0.7 5 0s2.5-0.7 5 0s2.5 0.7 5 0" stroke="#ffd700" stroke-width="3" opacity="0.7" />
+                </svg>
+                `;
+                pEl.innerHTML += targetSVG;
+                pEl.innerHTML += `<div class="cell-badge target-badge">GOAL 🏆</div>`;
+                
+                // Inward pulsing glowing arrows for target openings (filtered to stay within boundaries)
+                const openings = getOpenings(pipe);
+                openings.forEach(dir => {
+                    if (dir === 0 && pipe.y === 0) return; // Skip Top out-of-bounds
+                    if (dir === 1 && pipe.x === currentStage.cols - 1) return; // Skip Right out-of-bounds
+                    if (dir === 2 && pipe.y === currentStage.rows - 1) return; // Skip Bottom out-of-bounds
+                    if (dir === 3 && pipe.x === 0) return; // Skip Left out-of-bounds
+
+                    pEl.innerHTML += `
+                    <div class="flow-indicator inflow dir-${dir}">
+                        <svg class="arrow-svg" viewBox="0 0 24 24">
+                            <path d="M12 5v14M19 12l-7 7-7-7" />
+                        </svg>
+                    </div>`;
+                });
+            }
             
             pEl.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -125,7 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pEl.style.left = `${left}px`;
         pEl.style.top = `${top}px`;
         
-        const svg = pEl.querySelector('svg:not(.faucet-icon):not(.target-icon)');
+        // Exclude icon and arrow SVGs so they are not affected by pipe rotation/flipping
+        const svg = pEl.querySelector('svg:not(.faucet-icon):not(.target-icon):not(.arrow-svg)');
         if (svg) {
             svg.style.transform = `rotate(${pipe.rot * 90}deg) scaleX(${pipe.flipX}) scaleY(${pipe.flipY})`;
         }
@@ -318,6 +467,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (moves <= optimal + 1) stars = 3;
         else if (moves <= optimal + 4) stars = 2;
         
+        // Save stars and unlock next stage
+        StorageManager.saveStars(currentStageIndex, stars);
+        StorageManager.unlockStage(currentStageIndex + 1);
+
         // Show stars in UI footer
         const starEls = document.querySelectorAll('footer .star');
         starEls.forEach((el, i) => {
@@ -339,12 +492,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetStars() {
-        document.querySelectorAll('.star').forEach(el => el.classList.add('empty'));
+        document.querySelectorAll('footer .star').forEach(el => el.classList.add('empty'));
     }
 
-    function goToNextStage() {
-        loadStage(currentStageIndex + 1);
-    }
+    // Removed goToNextStage as it is handled by the clear modal event listener now.
     
     // 임시 정답 확인 기능
     function autoSolveStage() {

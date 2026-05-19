@@ -15,50 +15,86 @@
         <!-- 배경 파티클용 캔버스 -->
         <canvas id="bg-canvas"></canvas>
 
-        <header>
-            <div class="logo">
-                <span class="highlight">PIPE</span> SHIFTER
+        <!-- 타이틀 뷰 -->
+        <div id="view-title" class="view-container">
+            <div class="title-content">
+                <h1 class="main-logo"><span class="highlight">PIPE</span><br>SHIFTER</h1>
+                <p class="subtitle">물길을 열어라!</p>
+                <button id="btn-to-select" class="primary-btn btn-large">시작하기</button>
             </div>
-            <div class="top-controls">
-                <button id="auto-solve-btn" class="icon-btn" style="color: #ffd700; border-color: #ffd700;" title="정답 보기 (임시)">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </button>
-                <div class="stage-info">Stage <span id="stage-display">1</span></div>
-                <button id="reset-btn" class="icon-btn" title="스테이지 재시작">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                </button>
-            </div>
-        </header>
+        </div>
 
-        <main>
-            <div class="game-container">
-                <!-- 게임 보드 렌더링 영역 -->
-                <div id="grid-board" class="grid-board"></div>
-                
-                <!-- 조작 UI 오버레이 -->
-                <div id="action-overlay" class="action-overlay hidden">
-                    <button class="action-btn rotate-left" data-action="rotate-left" title="왼쪽으로 90도 회전">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                    </button>
-                    <button class="action-btn rotate-right" data-action="rotate-right" title="오른쪽으로 90도 회전">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
-                    </button>
-                    <button class="action-btn flip" data-action="flip" title="뒤집기">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M8 3v18"/><path d="M16 3v18"/><path d="M12 8l4 4-4 4"/><path d="M4 12h8"/></svg>
-                    </button>
+        <!-- 스테이지 선택 뷰 -->
+        <div id="view-stage-select" class="view-container hidden">
+            <header class="select-header">
+                <h2>STAGE SELECT</h2>
+            </header>
+            <div class="stage-grid-wrapper">
+                <div id="stage-grid" class="stage-grid">
+                    <!-- JS에서 동적 생성 -->
                 </div>
             </div>
-        </main>
-
-        <footer>
-            <div class="stars-container">
-                <div class="star empty" id="star-1">★</div>
-                <div class="star empty" id="star-2">★</div>
-                <div class="star empty" id="star-3">★</div>
+            <div id="stage-info-panel" class="stage-info-panel glass-panel hidden">
+                <h3 id="selected-stage-title">Stage 1</h3>
+                <div class="stars-container" id="selected-stage-stars">
+                    <div class="star empty">★</div>
+                    <div class="star empty">★</div>
+                    <div class="star empty">★</div>
+                </div>
+                <button id="btn-play-stage" class="primary-btn">시작하기</button>
             </div>
-            <div class="moves-info">Moves: <span id="moves-display">0</span></div>
-            <button id="check-flow-btn" class="primary-btn">밸브 열기</button>
-        </footer>
+        </div>
+
+        <!-- 게임 뷰 -->
+        <div id="view-game" class="view-container hidden">
+            <header>
+                <div class="logo">
+                    <span class="highlight">PIPE</span> SHIFTER
+                </div>
+                <div class="top-controls">
+                    <button id="btn-back" class="icon-btn" title="스테이지 선택으로">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button id="auto-solve-btn" class="icon-btn" style="color: #ffd700; border-color: #ffd700;" title="정답 보기 (임시)">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </button>
+                    <div class="stage-info">Stage <span id="stage-display">1</span></div>
+                    <button id="reset-btn" class="icon-btn" title="스테이지 재시작">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                </div>
+            </header>
+
+            <main>
+                <div class="game-container">
+                    <!-- 게임 보드 렌더링 영역 -->
+                    <div id="grid-board" class="grid-board"></div>
+                    
+                    <!-- 조작 UI 오버레이 -->
+                    <div id="action-overlay" class="action-overlay hidden">
+                        <button class="action-btn rotate-left" data-action="rotate-left" title="왼쪽으로 90도 회전">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                        </button>
+                        <button class="action-btn rotate-right" data-action="rotate-right" title="오른쪽으로 90도 회전">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                        </button>
+                        <button class="action-btn flip" data-action="flip" title="뒤집기">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M8 3v18"/><path d="M16 3v18"/><path d="M12 8l4 4-4 4"/><path d="M4 12h8"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </main>
+
+            <footer>
+                <div class="stars-container">
+                    <div class="star empty" id="star-1">★</div>
+                    <div class="star empty" id="star-2">★</div>
+                    <div class="star empty" id="star-3">★</div>
+                </div>
+                <div class="moves-info">Moves: <span id="moves-display">0</span></div>
+                <button id="check-flow-btn" class="primary-btn">밸브 열기</button>
+            </footer>
+        </div>
 
         <!-- 클리어 모달 -->
         <div id="clear-modal" class="modal hidden">
@@ -70,7 +106,7 @@
                     <div class="star active">★</div>
                 </div>
                 <p class="modal-msg">완벽하게 물길을 열었어요!</p>
-                <button id="next-stage-btn" class="primary-btn">다음 스테이지</button>
+                <button id="next-stage-btn" class="primary-btn">스테이지 선택으로</button>
             </div>
         </div>
     </div>
